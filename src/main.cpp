@@ -12,24 +12,49 @@
 #include <Arduino.h>
 #include <AccelStepper.h>
 
-int IN1 = 5;
-int IN2 = 4;
+int IN1 = 5;   // D1
+int IN2 = 4;   // D2
+int EN = 0;    // D3
 
 AccelStepper stepper(AccelStepper::FULL2WIRE, IN1, IN2);
 
+unsigned long now = 0;
+unsigned long doneMillis = 0;
+boolean done = false;
+
+int stepCount = 1000;
 void setup()
 {  
-    stepper.setMaxSpeed(300.0);
+    now = millis();
+    Serial.begin(9600);
+    stepper.setEnablePin(EN);
+    stepper.setMaxSpeed(200.0);
     stepper.setAcceleration(100.0);
-    stepper.moveTo(96);
- 
+    stepper.move(stepCount);
+    //stepper.disableOutputs();   // Otherwise, outputs maintain motor "locked"
+    Serial.println("Started");
+}
+
+void stop() {
+    stepper.stop();
+    stepper.disableOutputs();
+    Serial.println("Stopped");
+    //done = true;
+    now = millis();
+    stepper.move(stepCount);
 }
 
 void loop()
 {
-    // Change direction at the limits
-    if (stepper.distanceToGo() == 0)
-	    stepper.stop();
-    else
+    if (millis() - now < 5000) return;
+    // if (done) return;
+
+    if (stepper.distanceToGo() == 0) {
+        stop();
+    }
+    else {
+        stepper.enableOutputs();  
         stepper.run();
+    }
 }
+
